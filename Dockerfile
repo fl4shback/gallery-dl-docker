@@ -4,4 +4,4 @@ WORKDIR /app
 COPY ./gallery-dl .
 RUN python3 -m pip install -U .
 
-ENTRYPOINT [ "gallery-dl" ]
+ENTRYPOINT [ "exec", "gallery-dl" ]
