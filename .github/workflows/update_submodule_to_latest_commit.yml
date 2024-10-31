@@ -23,15 +23,17 @@ jobs:
         id: update_submodule
         run: |
           cd ${{ env.submodule_path }}
-          git fetch origin
-          git checkout origin/main
+          git fetch --all
+          git checkout $(git rev-parse --abbrev-ref HEAD)
+          git pull origin $(git rev-parse --abbrev-ref HEAD)
           SHORT_COMMIT=$(git rev-parse --short HEAD)
           echo "latest_tag=$SHORT_COMMIT" >> $GITHUB_ENV
           git submodule update --remote --merge
-          cd ..
+          cd
           git add ${{ env.submodule_path }}
           git commit -m "Update submodule to the latest commit"
           git push origin main
+  
 
       - name: Trigger Docker build workflow
         run: |
