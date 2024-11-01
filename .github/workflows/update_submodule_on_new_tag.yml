@@ -9,10 +9,6 @@ jobs:
   update_submodule_on_new_tag:
     runs-on: ubuntu-latest
 
-    outputs:
-      latest_tag: ${{ steps.latest_tag.outputs.latest_tag }}
-      current_tag: ${{ steps.current_tag.outputs.current_tag }}
-
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -30,24 +26,24 @@ jobs:
         run: |
           cd ${{ env.submodule_path }}
           git fetch --tags
-          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_ENV
 
-      - name: Check current submodule tag
+      - name: Check current submodule tag (if any)
         id: current_tag
         run: |
           cd ${{ env.submodule_path }}
-          CURRENT_TAG=$(git describe --tags --abbrev=0)
+          CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "no-tag")
           echo "current_tag=$CURRENT_TAG" >> $GITHUB_ENV
 
-      - name: Stop workflow if no new tag
-        if: ${{ env.latest_tag == env.current_tag }}
+      - name: Exit if no new tag or submodule has no tag
+        if: ${{ env.latest_tag == env.current_tag || env.current_tag == 'no-tag' }}
         run: |
-          echo "No new tag to update to, stopping here."
+          echo "No new tag to update to or local submodule commit has no associated tag. Exiting gracefully."
           exit 0
 
       - name: Trigger Docker build workflow
-        if: env.latest_tag != env.current_tag
+        if: ${{ env.latest_tag != env.current_tag && env.current_tag != 'no-tag' }}
         run: |
           curl -X POST \
           -H "Accept: application/vnd.github+json" \
