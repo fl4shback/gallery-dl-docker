@@ -2,7 +2,7 @@ name: Update Submodule on New Tag
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 5 * * *'
   workflow_dispatch:
 
 jobs:
@@ -39,6 +39,12 @@ jobs:
           cd ${{ env.submodule_path }}
           CURRENT_TAG=$(git describe --tags --abbrev=0)
           echo "current_tag=$CURRENT_TAG" >> $GITHUB_ENV
+
+      - name: Stop workflow if no new tag
+        if: ${{ env.latest_tag == env.current_tag }}
+        run: |
+          echo "No new tag to update to, stopping here."
+          exit 0
 
       - name: Trigger Docker build workflow
         if: env.latest_tag != env.current_tag
