@@ -47,10 +47,10 @@ jobs:
           git add ${{ env.submodule_path }}
           git commit -m "Update submodule to latest tag ${{ env.latest_tag }}"
           git push origin main
-          echo "current_tag=${{ env.latest_tag }}" >> $GITHUB_ENV
+          echo "trigger_build=true" >> $GITHUB_ENV
 
       - name: Trigger Docker build workflow
-        if: ${{ env.latest_tag != env.current_tag && env.current_tag != 'no-tag' }}
+        if: ${{ env.latest_tag != env.current_tag && (env.current_tag != 'no-tag' || env.trigger_build == 'true') }}
         run: |
           curl -X POST \
           -H "Accept: application/vnd.github+json" \
