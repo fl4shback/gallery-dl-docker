@@ -23,9 +23,9 @@ jobs:
         id: update_submodule
         run: |
           cd ${{ env.submodule_path }}
-          git fetch --all
-          git checkout $(git rev-parse --abbrev-ref HEAD)
-          git pull --ff-only origin $(git rev-parse --abbrev-ref HEAD) || git pull --rebase origin $(git rev-parse --abbrev-ref HEAD)
+          DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|^refs/remotes/origin/||')
+          git checkout "$DEFAULT_BRANCH"
+          git pull --rebase origin "$DEFAULT_BRANCH"
           SHORT_COMMIT=$(git rev-parse --short HEAD)
           echo "latest_tag=$SHORT_COMMIT" >> $GITHUB_ENV
           git submodule update --remote --merge
@@ -34,7 +34,7 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ${{ env.submodule_path }}
           git commit -m "Update submodule to the latest commit"
-          git push origin main
+          git push origin "$DEFAULT_BRANCH"
 
       - name: Trigger Docker build workflow
         run: |
