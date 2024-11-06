@@ -36,12 +36,6 @@ jobs:
           CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "no-tag")
           echo "current_tag=$CURRENT_TAG" >> $GITHUB_ENV
 
-      # - name: Exit if no new tag or submodule has no tag
-      #   if: ${{ env.latest_tag == env.current_tag || env.current_tag == 'no-tag' }}
-      #   run: |
-      #     echo "No new tag to update to or local submodule commit has no associated tag. Exiting gracefully."
-      #     exit 0
-
       - name: Update submodule to latest tag
         if: ${{ env.latest_tag != env.current_tag && env.current_tag != 'no-tag' }}
         run: |
