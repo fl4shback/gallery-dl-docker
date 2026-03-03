@@ -27,11 +27,10 @@ jobs:
           echo "submodule_path=$SUBMODULE_PATH" >> $GITHUB_ENV
 
       - name: Get latest tag from submodule origin
-        id: latest_tag
         run: |
           cd ${{ env.submodule_path }}
           git fetch --tags
-          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_ENV
 
       - name: Check current submodule tag (if any)
@@ -48,7 +47,7 @@ jobs:
           echo "tag_to_use=$TAG_TO_USE" >> $GITHUB_ENV
 
       - name: Update submodule to specified or latest tag
-        if: ${{ env.tag_to_use != env.current_tag && env.current_tag != 'no-tag' || github.event.inputs.manual_tag != '' }}
+        if: ${{ env.tag_to_use != env.current_tag || github.event.inputs.manual_tag != '' }}
         run: |
           cd ${{ env.submodule_path }}
           git checkout ${{ env.tag_to_use }}
