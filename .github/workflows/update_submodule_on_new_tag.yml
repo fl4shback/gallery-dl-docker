@@ -33,12 +33,19 @@ jobs:
           LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_ENV
 
-      - name: Check current submodule tag (if any)
+      - name: Check if submodule is already at or ahead of latest tag
         id: current_tag
         run: |
           cd ${{ env.submodule_path }}
-          CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "no-tag")
+          CURRENT_TAG=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || echo "no-tag")
           echo "current_tag=$CURRENT_TAG" >> $GITHUB_ENV
+          # Check if latest tag is already an ancestor of (or equal to) HEAD
+          # If yes, HEAD is at or beyond the latest tag — no rollback needed
+          if git merge-base --is-ancestor "$latest_tag" HEAD 2>/dev/null; then
+            echo "head_is_ahead_of_latest_tag=true" >> $GITHUB_ENV
+          else
+            echo "head_is_ahead_of_latest_tag=false" >> $GITHUB_ENV
+          fi
 
       - name: Determine tag to use
         id: determine_tag
@@ -47,7 +54,7 @@ jobs:
           echo "tag_to_use=$TAG_TO_USE" >> $GITHUB_ENV
 
       - name: Update submodule to specified or latest tag
-        if: ${{ env.tag_to_use != env.current_tag || github.event.inputs.manual_tag != '' }}
+        if: ${{ (env.head_is_ahead_of_latest_tag == 'false' && env.tag_to_use != env.current_tag) || github.event.inputs.manual_tag != '' }}
         run: |
           cd ${{ env.submodule_path }}
           git checkout ${{ env.tag_to_use }}
